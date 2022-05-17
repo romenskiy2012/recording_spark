@@ -1,0 +1,112 @@
+.QMainWindow{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 '#56A0BB', stop:1 '#759BBD');}
+QLabel{color: rgb(255, 255, 255);
+background-color: rgb(54, 54, 54, 150);
+border-radius: 15px;
+}
+
+QLineEdit{
+    border-radius: 15px;
+    background: rgb(54, 54, 54, 150);
+    color:  rgb(255, 255, 255);
+    }
+
+
+QCheckBox{
+    spacing: 5px;
+    border-radius: 15px;
+    color:  rgb(255, 255, 255);
+    background: rgba(54, 54, 54, 200);
+    width: 30px;
+    height: 30px;
+}
+
+QCheckBox::indicator {
+    border-radius: 5px;
+    color:  rgb(255, 255, 255);
+    width: 10px;
+    height: 10px;
+}
+QCheckBox::indicator:unchecked {
+    background: #E77676;
+}
+
+QCheckBox::indicator:checked {
+    background: #6AC766;
+    color:  rgb(0, 0, 0);
+}
+
+
+.QPushButton {
+background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #c9d6ff, stop:1 #e2e2e2);
+color: #1b1b1b;
+border: none;
+border-radius: 10px;
+text-align: center;
+}
+.QPushButton:hover {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #97A9E3, stop:1 #D2D2D2);
+}
+.QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #7186CB, stop:1 #C0C0C0);
+}
+.QPushButton::disabled{
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #A1A8BF, stop:1 #AAAAAA);
+    color: #242424;
+}
+
+
+QComboBox:on {
+    padding-top: 3px;
+    padding-left: 4px;
+}
+
+
+QComboBox{
+    background: rgba(54, 54, 54, 200);
+    color: #ffffff;
+    background-color: rgba(54, 54, 54, 150);
+    border-radius: 15px;
+
+
+}
+
+QComboBox QAbstractItemView {
+    outline: none;
+    background: #303030;
+}
+
+QComboBox::down-arrow {
+    background-color: rgba(54, 54, 54, 0%);}
+
+QComboBox::drop-down{
+    background-color: rgba(54, 54, 54, 0%);
+}
+
+QComboBox:item:selected{
+    border: 1px solid rgba(85, 181, 80, 100%);
+    border-radius: 5px;
+    background-radius: 5px;
+    background: #364036;
+    color: #ffffff;
+}
+
+QComboBox:item{
+    background-color: #282828
+    color: #ffffff;
+}
+
+
+
+QComboBox:editable {
+    background-color: #282828
+    background: white;
+}
+
+QComboBox PrivateContainer{
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 20px;
+    padding: 8px;
+}
+
+
