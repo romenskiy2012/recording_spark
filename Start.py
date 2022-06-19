@@ -8,11 +8,30 @@ from werkzeug.utils import secure_filename
 from time import strftime, localtime, sleep #Для (Time)
 import json
 import hashlib
+import logging
 
 import bd_module
 from datetime import date
 
 put = os.path.dirname(os.path.realpath(__file__)) + "/"#Путь- (part-1)
+with open(f"{put}settings.json", "r") as read_file:
+    settings = json.load(read_file)
+import logging
+if settings["log_type"] == "INFO":
+    level=logging.INFO
+elif settings["log_type"] == "DEBUG":
+    level=logging.DEBUG
+elif settings["log_type"] == "ERROR":
+    level=logging.ERROR
+else:
+    print('Тип лога указан не верно, авто "INFO"\nВареанты: "INFO", "DEBUG", ERROR')
+    level=logging.INFO
+
+
+logging.basicConfig(filename=settings["log_file"], level=level)
+
+
+
 
 def authentication(token):
     uid = bd_module.check_user_short_token(token)
@@ -33,6 +52,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 print(UPLOAD_FOLDER)
 print("SAS")
 
+if not os.path.isdir(UPLOAD_FOLDER):
+    os.mkdir(UPLOAD_FOLDER)
+
+
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
@@ -42,8 +65,10 @@ def login():
     ps_info_name = request.headers['ps_info_name']
     uid ,user_name, active = bd_module.check_user(email, password)
     if uid == None:
+        logging.info(f"Авторизаии под пользователям {email} !!!ОТКАЗ!!!")
         return "login not found", 412
     elif active == 0:
+        logging.info(f"Авторизаии под пользователям {email} !!!ОТКЛЮЧИНА!!!")
         return "Учётная запесь отключина!", 423
     else:
         if remember == "1":
@@ -56,6 +81,7 @@ def login():
             #short_token = bd_module.add_short_token(uid)
             #live_token = None
         print(short_token, " - " ,live_token)
+        logging.info(f"Авторизаии под пользователям {email} !УСПЕХ!")
         return json.dumps({"short_token": short_token, "live_token": live_token, "user_id": uid, "user_name": user_name}, separators=(',', ':'))
 
 
@@ -76,6 +102,7 @@ def item_add():
     print("item_add")
     uid = authentication(request.headers['short_token'])
     if uid == None:
+        logging.debug(f"ls - Отказ по токену! IP - {mi_ip(request)}")
         print("/ls/' - 403")
         return "403", 426
     print(request)
@@ -89,8 +116,10 @@ def item_add():
     inventory_id = content['inventory_id']
     id = bd_module.add_item(uid, user_id_1, user_id_2, item_name, status, None, comments, inventory_id)
     if id != 0:
+        logging.info(f"Пользователь {uid} создал предмет {id}")
         return json.dumps({"item_id": id}, separators=(',', ':'))
     else:
+        logging.info(f"Пользователю {uid} отказано в создании предмета")
         return "Отказ", 403
 
 @app.route('/item_edit/', methods=['GET', 'POST'])
@@ -98,6 +127,7 @@ def item_edit():
     print("item_edit")
     uid = authentication(request.headers['short_token'])
     if uid == None:
+        logging.debug(f"item_edit - Отказ по токену! IP - {mi_ip(request)}")
         print("/item_edit/' - 403")
         return "403", 426
     content = request.json
@@ -110,8 +140,10 @@ def item_edit():
     inventory_id = content['inventory_id']
     id = bd_module.item_edit(uid, item_id, user_id_1, user_id_2, item_name, status, None, comments, inventory_id)
     if id == 1:
+        logging.info(f"Пользователь {uid} изменил предмета {item_id}")
         return "OK", 200
     else:
+        logging.info(f"Пользователю {uid} отказано в редактировании предмета {item_id}")
         return "Отказ", 403
 
 @app.route('/item_rm/', methods=['GET', 'POST'])
@@ -119,7 +151,8 @@ def item_rm():
     print("item_rm")
     uid = authentication(request.headers['short_token'])
     if uid == None:
-        print("/ls/' - 403")
+        logging.debug(f"item_rm - Отказ по токену! IP - {mi_ip(request)}")
+        print("/item_rm/' - 403")
         return "403", 426
     content = request.json
     item_id = content['item_id']
@@ -127,8 +160,11 @@ def item_rm():
     if id == 1:
         if os.path.isfile(f"{put}png/item/{item_id}"):
             os.remove(f"{put}png/item/{item_id}")
+            logging.info(f"Иконка предмета {item_id} удалена")
+        logging.info(f"Пользователь {uid} удолил предмета {item_id}")
         return "OK", 200
     else:
+        logging.info(f"Пользователю {uid} отказанно в удоление предмета {item_id}")
         return "Отказ", 403
 
 
@@ -142,7 +178,8 @@ def user_ls():
     uid = authentication(request.headers['short_token'])
     print(uid)
     if uid == None:
-        print("/ls/' - 403")
+        logging.debug(f"user_ls - Отказ по токену! IP - {mi_ip(request)}")
+        print("/user_ls/' - 403")
         return "403", 426
     return json.dumps({"ls": bd_module.ls_user(uid)}, separators=(',', ':'))
 
@@ -152,6 +189,7 @@ def user_info():
     user_id = (request.headers['user_id'])
     #uid = 455435
     if uid == None:
+        logging.debug(f"user_info - Отказ по токену! IP - {mi_ip(request)}")
         print("/user_info/' - 403")
         return "403", 426
     user_info = bd_module.user_info(uid, user_id)
@@ -183,21 +221,23 @@ def renew():
     short_token, live_token = bd_module.update_short_token(request.headers['user_id'], request.headers['live_token'])
     #short_token = bd_module.check_user_live_token(request.headers['live_token'])
     if short_token == None:
+        logging.debug(f"renew - Отказ по токену! IP - {mi_ip(request)}")
         print("/renew/' - 403")
         return "Токен не верен", 426
     return json.dumps({"short_token": short_token, "live_token": live_token}, separators=(',', ':'))
 
 
-
+"""
 @app.route('/exit/', methods=['GET', 'POST']) # ??? Что это ???
 def exit():
     print("exit")
     uid = authentication(request.headers['short_token'])
     if uid == None:
-        print("/ls/' - 403")
+        logging.debug(f"exit - Отказ по токену!")
+        print("/exit/' - 403")
         return "403", 426
     return json.dumps({"short_token": short_token}, separators=(',', ':'))
-
+"""
 
 
 
@@ -217,7 +257,8 @@ def kill_session():
 def ls_sessions(): # !!! МОГУТ БЫТЬ ПРОБЛЕМЫ !!!
     uid = authentication(request.headers['short_token'])
     if uid == None:
-        print("/exiting_session/' - 426")
+        logging.debug(f"ls_sessions - Отказ по токену! IP - {mi_ip(request)}")
+        print("/ls_sessions/' - 426")
         return "426", 426
     A = bd_module.ls_sessions(uid)
     return json.dumps({"matrix": A}, separators=(',', ':'))
@@ -226,6 +267,7 @@ def ls_sessions(): # !!! МОГУТ БЫТЬ ПРОБЛЕМЫ !!!
 def exiting_session(): # !!! МОГУТ БЫТЬ ПРОБЛЕМЫ !!!
     uid = authentication(request.headers['short_token'])
     if uid == None:
+        logging.debug(f"exiting_session - Отказ по токену! IP - {mi_ip(request)}")
         print("/exiting_session/' - 426")
         return "426", 426
     position = request.headers['position']
@@ -236,7 +278,8 @@ def exiting_session(): # !!! МОГУТ БЫТЬ ПРОБЛЕМЫ !!!
 def full_closure_session(): # !!! МОГУТ БЫТЬ ПРОБЛЕМЫ !!!
     uid = authentication(request.headers['short_token'])
     if uid == None:
-        print("/exiting_session/' - 426")
+        logging.debug(f"full_closure_session - Отказ по токену! IP - {mi_ip(request)}")
+        print("/full_closure_session/' - 426")
         return "426", 426
     A = bd_module.full_sessions_kill(uid)
     return "OK"
@@ -245,6 +288,7 @@ def full_closure_session(): # !!! МОГУТ БЫТЬ ПРОБЛЕМЫ !!!
 def user_add():
     uid = authentication(request.headers['short_token'])
     if uid == None:
+        logging.debug(f"user_add - Отказ по токену! IP - {mi_ip(request)}")
         print("/user_add/' - 426")
         return "426", 426
     content = request.json
@@ -265,6 +309,7 @@ def user_add():
 def user_edit():
     uid = authentication(request.headers['short_token'])
     if uid == None:
+        logging.debug(f"user_edit - Отказ по токену! IP - {mi_ip(request)}")
         print("/user_edit/' - 426")
         return "426", 426
     content = request.json
@@ -286,6 +331,7 @@ def user_edit():
 def ls_group():
     uid = authentication(request.headers['short_token'])
     if uid == None:
+        logging.debug(f"ls_group - Отказ по токену! IP - {mi_ip(request)}")
         print("/ls_group/' - 426")
         return "426", 426
     A = bd_module.ls_group(uid)
@@ -328,7 +374,8 @@ def rm_item_icon():
     #uid = 1
     item_id = request.headers['item_id']
     if uid == None:
-        print("/add_item_icon/' - 403")
+        logging.debug(f"rm_item_icon - Отказ по токену! IP - {mi_ip(request)}")
+        print("/rm_item_icon/' - 403")
         return "403", 426
     a = bd_module.item_edit(uid, item_id, None, None, None, None, '-1', None, None)
     if a == 1:
@@ -345,6 +392,7 @@ def add_item_icon():
     #uid = 1
     item_id = request.headers['item_id']
     if uid == None:
+        logging.debug(f"add_item_icon - Отказ по токену! IP - {mi_ip(request)}")
         print("/add_item_icon/' - 403")
         return "403", 426
     if 'file' in request.files:
@@ -381,6 +429,7 @@ def ls_item_icon():
     #uid = 1
     print(uid)
     if uid == None:
+        logging.debug(f"ls_item_icon - Отказ по токену! IP - {mi_ip(request)}")
         print("/ls_item_icon/' - 403")
         return "403", 426
     item_info = bd_module.item_info(uid,item_id)
@@ -398,6 +447,7 @@ def ls_avatar_icon():
     url = request.headers['uid']
     #uid = 455435
     if uid == None:
+        logging.debug(f"avatar - Отказ по токену! IP - {mi_ip(request)}")
         print("/avatar/' - 403")
         return "403", 426
     url = bd_module.avatar_png(uid)
@@ -412,4 +462,4 @@ def ls_avatar_icon():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    app.run(host=settings["host"], port=settings["port"])

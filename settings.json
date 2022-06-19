@@ -1,0 +1,20 @@
+{
+    "Mariadb": {
+        "host": "127.0.0.1",
+        "port": 3306,
+        "user": "recording_spark",
+        "password": "",
+        "select_commit": true
+    },
+    "Redis": {
+        "host": "127.0.0.1",
+        "port": 6379,
+        "password": "",
+        "db": 1
+    },
+    "host": "0.0.0.0",
+    "port": 5000,
+
+    "log_file": "server.log",
+    "log_type": "INFO"
+}

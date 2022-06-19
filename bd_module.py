@@ -22,19 +22,86 @@ import random
 
 
 import secrets
+import json
 
-IP = "127.0.0.1"
+put = os.path.dirname(os.path.realpath(__file__)) + "/"#Путь- (part-1)
+
+#import logging
+#logging.basicConfig(filename="bd.log", level=logging.INFO)
+
+
+with open(f"{put}settings.json", "r") as read_file:
+    settings = json.load(read_file)
 
 # BEGIN mariadb
 import mariadb
 import sys
-pool = mariadb.ConnectionPool(user="recording_spark",password="",host=IP,port=3306,pool_name="web-app",pool_size=1)
-try:
-    bd = pool.get_connection()
-except mariadb.PoolError as e:
-    print(f"Error opening connection from pool: {e}")
 
+"""
+try:
+    bd = mariadb.connect(
+        user="recording_spark",
+        password="",
+        host=IP,
+        port=3306
+    )
+except mariadb.Error as e:
+    print(f"Error connecting to MariaDB Platform: {e}")
+    sys.exit(1)
+
+sql = bd.cursor()
+"""
+pool = mariadb.ConnectionPool(
+    pool_name = "web-app",
+    pool_size = 3,
+    pool_reset_connection = False,
+)
+
+pool.set_config(
+    host=settings["Mariadb"]["host"],
+    port=settings["Mariadb"]["port"],
+    user=settings["Mariadb"]["user"],
+    password=settings["Mariadb"]["password"])
+
+pool.add_connection()
+
+#pool = mariadb.ConnectionPool(user="recording_spark",password="",host=IP,port=3306,pool_name="web-app",pool_size=20)
+#try:
+#    bd = pool.get_connection()
+#except mariadb.PoolError as e:
+#    print(f"Error opening connection from pool: {e}")
+
+
+bd = pool.get_connection()
 sql = bd.cursor() ## TODO SAS
+
+
+
+
+def ping_db():
+    global bd, sql, pool
+    try:
+        bd.ping()
+        print("SAS_1")
+    except:
+        print("sus_1")
+        sql.close()
+        bd.close()
+        pool.add_connection()
+        bd = pool.get_connection()
+        sql = bd.cursor()
+
+
+        #bd.close()
+        #pool.add_connection()
+        #bd = pool.get_connection()
+        #sql = bd.cursor()
+        #bd, sql, pool = Start()
+
+
+
+
+
 # BEGIN bd CREATE
 sql.execute("""
     CREATE TABLE IF NOT EXISTS recording_spark.group (
@@ -188,12 +255,12 @@ SELECT user_id FROM recording_spark.ownership_over_group WHERE group_id IN
 import redis
 from datetime import timedelta
 r = redis.StrictRedis(
-    host=IP,
-    port=6379,
-    password='',
+    host=settings["Redis"]["host"],
+    port=settings["Redis"]["port"],
+    password=settings["Redis"]["password"],
     charset="utf-8",
     decode_responses=True,
-    db = 1
+    db = settings["Redis"]["db"]
 )
 # END
 # BEGIN L
@@ -609,6 +676,7 @@ def add_user_registration(email, password):
 # BEGIN mariadb_SAS
 
 def user_name(user_id):
+    ping_db()
     sql.execute("SELECT user_name FROM recording_spark.user WHERE user_id = ?", (user_id,))
     A = sql.fetchone()
     if A == None:
@@ -618,6 +686,7 @@ def user_name(user_id):
 
 
 def avatar_png(user_id):
+    ping_db()
     sql.execute("SELECT avatar FROM recording_spark.user WHERE user_id = ?", (user_id,))
     A = sql.fetchone()
     if A == None:
@@ -627,6 +696,7 @@ def avatar_png(user_id):
 
 
 def check_user(email, password):
+    ping_db()
     sql.execute("SELECT user_id, user_name, active FROM recording_spark.user WHERE email = ? AND password = ?", (email, password))
     A = sql.fetchone()
     if A == None:
@@ -657,6 +727,7 @@ def check_user(email, password):
 """
 
 def ls_user(user_id):
+    ping_db()
     A = permissions_user_r(user_id)
     print(A)
     sql.execute("""SELECT recording_spark.user.user_id, recording_spark.user.user_name, recording_spark.user.email, recording_spark.user.avatar, recording_spark.user.active, SAS.group_id, SAS.name, SAS.rights
@@ -711,9 +782,15 @@ NULL)
 
 
 #print(ls_user(4))
-
+import time
 
 def ls_item(user_id):
+    ping_db()
+    tic = time.perf_counter()
+    if settings["Mariadb"]["select_commit"] == True:
+        bd.commit()
+    toc = time.perf_counter()
+    print(f"Вычисление заняло {toc - tic:0.8f} секунд")
     A = permissions_item_r(user_id)
     #if A[2] == 1:
     sql.execute("""SELECT recording_spark.item.item_id, recording_spark.item.item_name, recording_spark.item.status, recording_spark.item.user_id_1, SAS.user_name, recording_spark.item.user_id_2, SUS.user_name, recording_spark.item.icon, recording_spark.item.comments, recording_spark.item.inventory_id
@@ -816,6 +893,7 @@ NULL)
 
 # 3 зп!
 def user_add(user_id:int, user_name:str, email:str, password:str, avatar:bool, active:bool, group_id:int):
+    ping_db()
     def add(user_name, email, password, avatar, active, group_id):
         print(user_name, email, password, avatar, active, group_id)
         sql.execute("""
@@ -922,6 +1000,7 @@ user_id_2 = -1
 #print(f'iw{A}')
 # 2 зп!
 def item_edit(user_id, item_id, user_id_1, user_id_2, name, status, icon, comments, inventory_id):
+    ping_db()
     print(user_id, item_id, user_id_1, user_id_2, name, status, icon, comments, inventory_id)
     Al = permissions_user_r(user_id)
     print(f'ur{Al}')
@@ -1068,6 +1147,7 @@ SELECT
 
 
 def permission(u_id,user_id):
+    ping_db()
     A = permissions_user_r(u_id)
     print(A)
     sql.execute("""SELECT group_id FROM recording_spark.ownership_over_group WHERE user_id =
@@ -1101,6 +1181,7 @@ def permission(u_id,user_id):
 
 # 2 зп!
 def item_rm(user_id,item_id):
+    ping_db()
     A = permissions_item_w(user_id)
     sql.execute("""DELETE FROM recording_spark.item WHERE item_id =
 
@@ -1148,6 +1229,7 @@ def item_rm(user_id,item_id):
 #id = sql.rowcount
 #print(id)
 def user_rm(user_id,user_id_rm):
+    ping_db()
     A = permissions_user_w(user_id)
     sql.execute("""DELETE
         recording_spark.user, recording_spark.ownership_over_group FROM
@@ -1215,6 +1297,7 @@ def item_rm_2(user_id,item_id):
 
 # 4 зп!
 def add_item(user_id, user_id_1, user_id_2, name, status, icon, comments, inventory_id):
+    ping_db()
     print(user_id, user_id_1, user_id_2, name, status, icon, comments, inventory_id)
     Al = permissions_user_r(user_id)
     print(f'ur{Al}')
@@ -1319,6 +1402,7 @@ def add_item_3(user_id, user_id_2, name, status, icon, comments, inventory_id):
 
 # 2 зп!
 def user_edit(user_id,user_id_rec, user_name, email, password, avatar, active, group_id):
+    ping_db()
     A = permissions_user_w(user_id)
     print(user_id)
     print(A)
@@ -1362,6 +1446,7 @@ def user_edit(user_id,user_id_rec, user_name, email, password, avatar, active, g
 
 # 2 зп!
 def user_info(user_id,user_id_rec):
+    ping_db()
     A = permissions_user_r(user_id)
     print(A)
     sql.execute("""SELECT recording_spark.user.user_name, recording_spark.user.email, recording_spark.user.avatar, recording_spark.user.active, SAS.group_id, SAS.rights
@@ -1389,6 +1474,7 @@ def user_info(user_id,user_id_rec):
         return A
 
 def ls_group(user_id):
+    ping_db()
     A = permissions_user_r(user_id)
     if A[2] == 1:
         sql.execute("SELECT * FROM recording_spark.group")
@@ -1406,6 +1492,7 @@ def ls_group(user_id):
 
 
 def item_info(user_id,item_id):
+    ping_db()
     A = permissions_item_r(user_id)
     sql.execute("""SELECT * FROM recording_spark.item
         WHERE item_id =
@@ -1433,6 +1520,7 @@ def item_info(user_id,item_id):
     return group_list
 
 def item_w_test(user_id,item_id):
+    ping_db()
     A = permissions_item_w(user_id)
     sql.execute("""SELECT
 
