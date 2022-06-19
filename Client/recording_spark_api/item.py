@@ -20,7 +20,7 @@ import os
 # - - Лайв токен теперь безсмертный и многорназовый.
 # + !!!Лайв токет смертный и одноразовый!!!
 
-from werkzeug.exceptions import HTTPException
+#from werkzeug.exceptions import HTTPException
 import json
 from argparse import Namespace
 import hashlib

@@ -16,9 +16,7 @@ group_list = []
 import recording_spark_api
 
 
-import json
-with open(f"{put}content/json/user.json", "r") as read_file:
-    X_Pars = json.load(read_file)
+
 
 def sex(SSS, window,target):
     ###window.pushButton_2.setEnabled(False)

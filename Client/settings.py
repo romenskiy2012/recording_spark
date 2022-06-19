@@ -129,6 +129,8 @@ def GUI():
 
 
         """)
+    oloss = "background: rgb(0, 0, 0, 0%); color:  rgb(0, 0, 0, 0%);"
+    window.label_4.setStyleSheet(oloss)
 
     QTimer.singleShot(100, lambda:start(window))
 

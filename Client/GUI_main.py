@@ -14,6 +14,9 @@ from time import strftime, localtime, sleep #Для (Time)
 
 from PySide2 import QtGui
 
+import threading
+event = threading.Event()
+
 put = os.path.dirname(os.path.realpath(__file__)) + "/"#Путь- (part-1)
 R = 0
 matrix = []
@@ -27,11 +30,8 @@ themes = ""
 import recording_spark_api
 import GUI_item, GUI_user, settings
 
-
-import json
-with open(f"{put}content/json/user.json", "r") as read_file:
-    X_Pars = json.load(read_file)
-
+A_ls_group = []
+A_user_ls = []
 
 columns = ['ID','Предмет','Статус','От кого','К кому','Коментарий','Нивентарный ID']
 columns_u = ['ID','Имя','Почта','Аватарка','Работает ?','Група', 'Права']
@@ -68,6 +68,72 @@ def INFO(A, B):
 
     #msg.setFixedSize(400, 5000)
 
+def paint():
+    if changeling_status == 0:
+        columns_2.clear()
+        a = 0
+        for p in column:
+            if p:
+                columns_2.append(columns[a])
+            a = a + 1
+        ls_list = matrix
+        window.tableWidget.setColumnCount(len(columns_2))
+        window.tableWidget.setHorizontalHeaderLabels(columns_2)
+        A_ls = A_user_ls
+        column_T = column
+    else:
+        columns_u_2.clear()
+        a = 0
+        for p in column_u:
+            if p:
+                columns_u_2.append(columns_u[a])
+            a = a + 1
+        ls_list = matrix_u
+
+        window.tableWidget.setColumnCount(len(columns_u_2))
+        window.tableWidget.setHorizontalHeaderLabels(columns_u_2)
+        A_ls = A_ls_group
+        column_T = column_u
+        print(f"A_ls_group - {A_ls_group}")
+        print(f"column_T - {column_T}")
+
+    if window.comboBox.currentIndex()-1 == -1:
+        window.tableWidget.setRowCount(len(ls_list))
+        filter_ls = ls_list
+    else:
+        saq = 0
+        filter_ls = []
+        for A in ls_list:
+            if (changeling_status == 0 and (A_ls[window.comboBox.currentIndex()-1][0] == A[3] or A_ls[window.comboBox.currentIndex()-1][0] == A[5])) or (changeling_status == 1 and (A_ls[window.comboBox.currentIndex()-1][0] == A[5])):
+                filter_ls.append(A)
+                saq = saq + 1
+        window.tableWidget.setRowCount(saq)
+    #window.tableWidget.setColumnCount(len(ls_list[0])-3)
+
+
+    a = 0
+    b = 0
+    q = 0
+    q_2 = 0
+    #print(f"{window.comboBox.currentIndex()-1} - {A_user_ls[window.comboBox.currentIndex()-1][0]}")
+    for A in filter_ls:
+        #print(f"{A[3]} - {A[5]}")
+        for L in A:
+            if (changeling_status == 0 and not (b == 5 or b == 3 or b == 7)) or (changeling_status == 1 and not (b == 5)):
+                #print(b)
+                if column_T[q_2]:
+                    #print(f"{column_T[q]} - {L}")
+                    window.tableWidget.setItem(a,q, QTableWidgetItem(str(L)))
+                    q = q + 1
+                q_2 = q_2 + 1
+            b = b + 1
+        a = a + 1
+        b = 0
+        q = 0
+        q_2 = 0
+def paint_u():
+    paint()
+"""
 def paint_u(): # Рисуем с верху в низ с лево на право. !!! НЕТ !!!
     columns_u_2.clear()
 
@@ -92,21 +158,23 @@ def paint_u(): # Рисуем с верху в низ с лево на прав�
     b = 0
     q = 0
     q_2 = 0
+    #print(f"{window.comboBox.currentIndex()} - 0")
     for A in ls_list:
-        for L in A:
-            if not (b == 5):
-                #print(b)
-                if column_u[q_2]:
-                    #print(f"{column[q]} - {L}")
-                    window.tableWidget.setItem(a,q, QTableWidgetItem(str(L)))
-                    #window.tableWidget.setCellWidget(0,1,comBox)
-                    q = q + 1
-                q_2 = q_2 + 1
-            b = b + 1
-        a = a + 1
-        b = 0
-        q = 0
-        q_2 = 0
+        if (A_ls_group[window.comboBox.currentIndex()][0] == A[3] or A_ls_group[window.comboBox.currentIndex()][0] == A[5]) or window.comboBox.currentIndex() == 0:
+            for L in A:
+                if not (b == 5):
+                    #print(b)
+                    if column_u[q_2]:
+                        #print(f"{column[q]} - {L}")
+                        window.tableWidget.setItem(a,q, QTableWidgetItem(str(L)))
+                        #window.tableWidget.setCellWidget(0,1,comBox)
+                        q = q + 1
+                    q_2 = q_2 + 1
+                b = b + 1
+            a = a + 1
+            b = 0
+            q = 0
+            q_2 = 0
 
 
 def paint(): # Рисуем с верху в низ с лево на право. !!! НЕТ !!!
@@ -123,7 +191,14 @@ def paint(): # Рисуем с верху в низ с лево на право.
     ls_list = matrix
     #print(len(ls_list))
     #print(len(ls_list[1]))
-    window.tableWidget.setRowCount(len(ls_list))
+    if window.comboBox.currentIndex()-1 == -1:
+        window.tableWidget.setRowCount(len(ls_list))
+    else:
+        saq = 0
+        for A in ls_list:
+            if (A_user_ls[window.comboBox.currentIndex()-1][0] == A[3] or A_user_ls[window.comboBox.currentIndex()-1][0] == A[5]):
+                saq = saq + 1
+        window.tableWidget.setRowCount(saq)
     #window.tableWidget.setColumnCount(len(ls_list[0])-3)
     window.tableWidget.setColumnCount(len(columns_2))
     window.tableWidget.setHorizontalHeaderLabels(columns_2)
@@ -131,30 +206,43 @@ def paint(): # Рисуем с верху в низ с лево на право.
     b = 0
     q = 0
     q_2 = 0
+    print(f"{window.comboBox.currentIndex()-1} - {A_user_ls[window.comboBox.currentIndex()-1][0]}")
     for A in ls_list:
-        for L in A:
-            if not (b == 3 or b == 5 or b == 7):
-                #print(b)
-                if column[q_2]:
-                    #print(f"{column[q]} - {L}")
-                    window.tableWidget.setItem(a,q, QTableWidgetItem(str(L)))
-                    q = q + 1
-                q_2 = q_2 + 1
-            b = b + 1
-        a = a + 1
-        b = 0
-        q = 0
-        q_2 = 0
-
+        if (A_user_ls[window.comboBox.currentIndex()-1][0] == A[3] or A_user_ls[window.comboBox.currentIndex()-1][0] == A[5]) or window.comboBox.currentIndex()-1 == -1:
+            print(f"{A[3]} - {A[5]}")
+            for L in A:
+                if not (b == 3 or b == 5 or b == 7):
+                    #print(b)
+                    if column[q_2]:
+                        #print(f"{column[q]} - {L}")
+                        window.tableWidget.setItem(a,q, QTableWidgetItem(str(L)))
+                        q = q + 1
+                    q_2 = q_2 + 1
+                b = b + 1
+            a = a + 1
+            b = 0
+            q = 0
+            q_2 = 0
+"""
 def ls_u():
     global matrix_u
     L = recording_spark_api.user.ls()
+    group = recording_spark_api.ls_group()
     print(recording_spark_api.server)
     print(L.number)
     if L.number == 403:
         print("БЛЯ")
         return  False
     elif L.number == 200:
+        if group.number == 200:
+            global A_ls_group
+            print(group.response.matrix)
+            A_ls_group = group.response.matrix
+            window.comboBox.clear()
+            window.comboBox.addItem("Все")
+            for nbn in group.response.matrix:
+                window.comboBox.addItem(nbn[1])
+            window.comboBox.setCurrentIndex(0)
         print(L.response.matrix)
         matrix_u = L.response.matrix
         print(matrix_u)
@@ -175,12 +263,22 @@ def ls_u():
 def ls():
     global matrix
     L = recording_spark_api.ls()
+    user = recording_spark_api.user.ls()
     print(recording_spark_api.server)
     print(L.number)
     if L.number == 403:
         print("БЛЯ")
         return  False
     elif L.number == 200:
+        if user.number == 200:
+            global A_user_ls
+            print(user.response.matrix)
+            A_user_ls = user.response.matrix
+            window.comboBox.clear()
+            window.comboBox.addItem("Все")
+            for nbn in user.response.matrix:
+                window.comboBox.addItem(nbn[1])
+            window.comboBox.setCurrentIndex(0)
         print(L.response.matrix)
         matrix = L.response.matrix
         print(matrix)
@@ -316,9 +414,22 @@ def SAS(A, B):
         window.label_2.setText(f"Имя группы:\n{matrix_u[A][6]}\nID группы:\n{matrix_u[A][5]}\n")
 
 
+def update_matrix_target():
+    th = Thread(target=update_matrix)
+    th.start()
 
 def update_matrix():
     global changeling_status
+    window.pushButton_7.setEnabled(False)
+    window.pushButton_5.setEnabled(False)
+    window.pushButton_2.setEnabled(False)
+    window.pushButton_3.setEnabled(False)
+    window.pushButton_4.setEnabled(False)
+    window.pushButton_8.setEnabled(False)
+
+
+    print("\nFalse\n")
+    time.sleep(4)
     print(f"update_matrix - {changeling_status}")
     a = window.tableWidget.rowCount()
     for l in range(a):
@@ -327,6 +438,12 @@ def update_matrix():
         ls()
     elif changeling_status == 1:
         ls_u()
+    window.pushButton_7.setEnabled(True)
+    window.pushButton_5.setEnabled(True)
+    window.pushButton_2.setEnabled(True)
+    window.pushButton_3.setEnabled(True)
+    window.pushButton_4.setEnabled(True)
+    window.pushButton_8.setEnabled(True)
 
 def purgen():
     global R
@@ -403,10 +520,45 @@ def log_out():
     R = 1
     window.close()
 
+import asyncio
+from threading import Thread
+def changeling_target():
+    th = Thread(target=changeling)
+    th.start()
 
-
+def AAA():
+    while True:
+        event_set = event.wait()
+        if event_set:
+            changeling()
+            print("Event received, releasing thread...")
+        else:
+            print("Time out, moving ahead without event...")
+        event.clear()
+    """
+    print("AAA_AAA")
+    if A:
+        print("SSS")
+        #btn_apply = window.buttonBox.button(QtGui.pushButton_5.Apply)
+        #btn_apply.setVisible(True)
+        window.pushButton_5.setEnabled(True)
+    else:
+        #btn_apply = window.buttonBox.button(QtGui.pushButton_5.Apply)
+        #btn_apply.setVisible(False)
+        window.pushButton_5.setEnabled(False)
+    """
 def changeling():
     global changeling_status
+    #await AAA(False)
+    #th = Thread(target=AAA, args=(False,))
+    #th.start()
+    window.pushButton_7.setEnabled(False)
+    window.pushButton_5.setEnabled(False)
+    window.pushButton_2.setEnabled(False)
+    window.pushButton_3.setEnabled(False)
+    window.pushButton_4.setEnabled(False)
+    window.pushButton_8.setEnabled(False)
+
     if changeling_status == 0:
         changeling_status = 1
         column_u_clon = tuple(column_u)
@@ -416,6 +568,7 @@ def changeling():
         print(column_u_clon, "column_u_clon")
         window.pushButton_5.setIcon(QIcon(f"{put}content/icon/item.png"))
         ls_u()
+        window.label.setText("Фильтровать по группам")
         window.checkBox.setText(columns_u[0])
         window.checkBox_2.setText(columns_u[1])
         window.checkBox_3.setText(columns_u[2])
@@ -447,6 +600,7 @@ def changeling():
         window.checkBox_5.setText(columns[4])
         window.checkBox_6.setText(columns[5])
         window.checkBox_7.setText(columns[6])
+        window.label.setText("Фильтровать по пользователем")
         window.checkBox.setChecked(column_clon[0])
         window.checkBox_2.setChecked(column_clon[1])
         window.checkBox_3.setChecked(column_clon[2])
@@ -455,6 +609,16 @@ def changeling():
         window.checkBox_6.setChecked(column_clon[5])
         window.checkBox_7.setChecked(column_clon[6])
     print()
+    #await AAA(True)
+    window.pushButton_7.setEnabled(True)
+    window.pushButton_5.setEnabled(True)
+    window.pushButton_2.setEnabled(True)
+    window.pushButton_3.setEnabled(True)
+    window.pushButton_4.setEnabled(True)
+    window.pushButton_8.setEnabled(True)
+
+#th = Thread(target=AAA)
+#th.start()
 
 def ppp(A):
     if changeling_status == 0:
@@ -467,6 +631,8 @@ def open_l(app, user_name, themes_l):
     themes = themes_l
     R = 0
     changeling_status = 0
+
+
 
     #if not QApplication.instance():
     #    app = QApplication(sys.argv)
@@ -521,6 +687,10 @@ def open_l(app, user_name, themes_l):
                     #window.lineEdit_3.setText(X_Pars["server"])
                 #if X_Pars["email"] != "":
                     #window.lineEdit.setText(X_Pars["email"])
+
+
+
+
     window.label_5.setText(user_name)
     window.tableWidget.cellClicked.connect(SAS)
     #window.pushButton_4.clicked.connect(GUI_item.open_l)
@@ -528,9 +698,11 @@ def open_l(app, user_name, themes_l):
     window.pushButton_2.clicked.connect(lambda:ppp (1))
     window.pushButton_8.clicked.connect(lambda:ppp (2))
 
-    window.pushButton_7.clicked.connect(update_matrix)
+    window.pushButton_7.clicked.connect(update_matrix_target)
     window.pushButton_3.clicked.connect(purgen)
-    window.pushButton_5.clicked.connect(changeling)
+    #window.pushButton_5.clicked.connect(changeling)
+    #window.pushButton_5.clicked.connect(lambda:event.set())
+    window.pushButton_5.clicked.connect(changeling_target)
 
     #ls()
     window.setWindowIcon(QIcon(f"{put}content/icon/2icon.png"))
@@ -559,6 +731,9 @@ def open_l(app, user_name, themes_l):
     window.pushButton.clicked.connect(log_out)
 
     window.pushButton_6.clicked.connect(lambda:settings.open_l ())
+
+
+    window.comboBox.activated.connect(paint)
 
 
 

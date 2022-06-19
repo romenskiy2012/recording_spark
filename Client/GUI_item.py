@@ -16,9 +16,7 @@ U_2 = 0
 import recording_spark_api
 
 
-import json
-with open(f"{put}content/json/user.json", "r") as read_file:
-    X_Pars = json.load(read_file)
+
 
 def sex(SSS, window, l):
     ###window.pushButton_2.setEnabled(False)
@@ -117,7 +115,7 @@ def test(window, L,target, IM):
             user_id_1 = None
         else:
             user_id_1 = L[window.comboBox.currentIndex()][0]
-        if L[window.comboBox.currentIndex()][0] == target[5]:
+        if L[window.comboBox_2.currentIndex()][0] == target[5]:
             user_id_2 = None
         else:
             user_id_2 = L[window.comboBox_2.currentIndex()][0]
@@ -225,6 +223,9 @@ def icon(window):
 
 
 def start(window, L, target, IM):
+    window.pushButton_8.setIcon(QIcon(f"{put}content/icon/folder-152141_1280.png"))
+
+
     for l in L:
         window.comboBox.addItem(l[1])
         window.comboBox_2.addItem(l[1])

@@ -8,7 +8,7 @@ import __init__
 import mein
 #from .mein import *
 
-from werkzeug.exceptions import HTTPException
+#from werkzeug.exceptions import HTTPException
 import json
 from argparse import Namespace
 import hashlib

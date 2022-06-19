@@ -155,7 +155,7 @@ def login(window_L):
         u_n = P.response.user_name
         recording_spark_api.route.clear()
         recording_spark_api.route.append(f"{put}/png/{server_id}/")
-        if os.path.isfile(f"{put}/png/{server_id}/"):
+        if not os.path.isdir(f"{put}/png/{server_id}/"):
             os.mkdir(f"{put}/png/{server_id}/")
         if I == 1:
             HG = bd_module.user_id_check(P.response.user_id, server_list_target[0])

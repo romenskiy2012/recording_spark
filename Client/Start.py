@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from PySide2.QtUiTools import QUiLoader #pip3 install PySide2
 from PySide2.QtWidgets import QApplication, QTableWidgetItem
 from PySide2.QtCore import QFile, QIODevice
@@ -42,7 +43,8 @@ themes = "heavenly_bliss"
 
 #print(X_Pars)
 
-
+if not os.path.isdir(put + "png"):
+    os.mkdir(put + "png")
 
 user_name = ""
 remember = 1

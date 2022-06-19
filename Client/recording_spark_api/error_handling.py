@@ -1,6 +1,6 @@
 import requests
 from requests.exceptions import HTTPError
-from werkzeug.exceptions import HTTPException
+#from werkzeug.exceptions import HTTPException
 from argparse import Namespace
 from recording_spark_api import *
 import __init__
